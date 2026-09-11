@@ -1,10 +1,14 @@
 ---
 name: flexpay-mobile-money
-description: Use when integrating FlexPay.cd Mobile Money payments into a PHP or Next.js application — implementing checkout flows with Airtel Money, M-Pesa, AfriMoney, or Orange Money via the FlexPay REST API. Covers PHP (pure, no framework) and Next.js 14+ App Router (Route Handlers, Server Actions, Client Components). Includes initiation, polling, callbacks, transaction audit logging, simulated mode for local testing, and security hardening.
+description: Guide d'architecture universel par Michel Bengana pour intégrer FlexPay.cd Mobile Money dans N'IMPORTE QUEL langage (PHP, Node.js, Python, Java...). Couvre les concepts techniques (Polling, Webhooks, Sécurité) avec des exemples en PHP, Laravel (Firestore) et Next.js.
 ---
 
 # FlexPay Mobile Money Integration
 
+
+> **Conçu et partagé par : Michel Bengana**
+>
+> *Mon objectif est que cette compétence facilite l'intégration de FlexPaie pour tous les développeurs, **peu importe le langage ou le framework qu'ils utilisent** (Node.js, Python, Java, Go, etc.). Ce document standardise l'architecture, les processus métier et les **termes techniques universels** (Initiation, Polling, Callback / Webhook, Idempotence). Les extraits de code en PHP, Laravel et Next.js servent de référence, mais la logique est transposable partout.*
 ## Overview
 
 FlexPay.cd is a DRC payment gateway that processes Mobile Money (Airtel Money, M-Pesa, AfriMoney, Orange Money) and bank card payments. This skill covers the **complete Mobile Money integration pattern** — from service layer to checkout UI to callback handling — extracted from a production ticketing platform.
@@ -1674,7 +1678,11 @@ POST /callback/flexpay                   ? Mobile Money callback (public, no aut
 
 ## Variante 2 : Architecture Laravel + Firebase/Firestore (Pattern Viteat)
 
-# FlexPay Mobile Money Integration (Laravel + Firestore)
+# FlexPay Mobile Money Integration 
+> **Conçu et partagé par : Michel Bengana**
+>
+> *Mon objectif est que cette compétence facilite l'intégration de FlexPaie pour tous les développeurs, **peu importe le langage ou le framework qu'ils utilisent** (Node.js, Python, Java, Go, etc.). Ce document standardise l'architecture, les processus métier et les **termes techniques universels** (Initiation, Polling, Callback / Webhook, Idempotence). Les extraits de code en PHP, Laravel et Next.js servent de référence, mais la logique est transposable partout.*
+(Laravel + Firestore)
 
 ## Overview
 
@@ -2035,4 +2043,5 @@ Route::post('payments/flexpay/status', [SecurePaymentController::class, 'flexpay
 Route::post('payments/flexpay/callback', [SecurePaymentController::class, 'flexpayCallback'])->name('payments.flexpay.callback');
 Route::post('payments/flexpay/confirm', [SecurePaymentController::class, 'flexpayConfirm'])->name('payments.flexpay.confirm');
 ```
+
 

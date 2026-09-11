@@ -1,23 +1,23 @@
 ---
 name: flexpay-mobile-money
-description: Use when integrating FlexPay.cd Mobile Money payments into a PHP or Next.js application — implementing checkout flows with Airtel Money, M-Pesa, AfriMoney, or Orange Money via the FlexPay REST API. Covers PHP (pure, no framework) and Next.js 14+ App Router (Route Handlers, Server Actions, Client Components). Includes initiation, polling, callbacks, transaction audit logging, simulated mode for local testing, and security hardening.
+description: Use when integrating FlexPay.cd Mobile Money payments into a PHP or Next.js application � implementing checkout flows with Airtel Money, M-Pesa, AfriMoney, or Orange Money via the FlexPay REST API. Covers PHP (pure, no framework) and Next.js 14+ App Router (Route Handlers, Server Actions, Client Components). Includes initiation, polling, callbacks, transaction audit logging, simulated mode for local testing, and security hardening.
 ---
 
 # FlexPay Mobile Money Integration
 
 ## Overview
 
-FlexPay.cd is a DRC payment gateway that processes Mobile Money (Airtel Money, M-Pesa, AfriMoney, Orange Money) and bank card payments. This skill covers the **complete Mobile Money integration pattern** — from service layer to checkout UI to callback handling — extracted from a production ticketing platform.
+FlexPay.cd is a DRC payment gateway that processes Mobile Money (Airtel Money, M-Pesa, AfriMoney, Orange Money) and bank card payments. This skill covers the **complete Mobile Money integration pattern** � from service layer to checkout UI to callback handling � extracted from a production ticketing platform.
 
-**Core principle:** The integration follows a three-step async pattern: (1) initiate payment via FlexPay API → (2) user confirms push notification on their phone → (3) FlexPay calls back or you poll to finalize. Every API interaction is logged to an audit table.
+**Core principle:** The integration follows a three-step async pattern: (1) initiate payment via FlexPay API ? (2) user confirms push notification on their phone ? (3) FlexPay calls back or you poll to finalize. Every API interaction is logged to an audit table.
 
 ## When to Use
 
 ```
 User needs Mobile Money payments?
-├─ DRC/RDC market? → Use FlexPay
-├─ Other African markets? → Adapt provider, keep pattern
-└─ Global Stripe-like? → Different skill needed
++- DRC/RDC market? ? Use FlexPay
++- Other African markets? ? Adapt provider, keep pattern
++- Global Stripe-like? ? Different skill needed
 ```
 
 **Symptoms that trigger this skill:**
@@ -28,50 +28,50 @@ User needs Mobile Money payments?
 - "Need simulated payment mode for local dev"
 
 **When NOT to use:**
-- Card payments only (FlexPay card flow is form-encoded POST, not JSON — different pattern)
+- Card payments only (FlexPay card flow is form-encoded POST, not JSON � different pattern)
 - Non-PHP backends (adapt the pattern, but code is PHP-specific)
 - Real-time/synchronous payments (Mobile Money is inherently async)
 
 ## Architecture Overview
 
 ```
-┌──────────┐     ┌──────────────┐     ┌─────────────┐     ┌──────────────┐
-│  Client   │────▶│  Checkout    │────▶│  FlexPay API │────▶│  User Phone  │
-│ (Browser) │     │  Controller  │     │  /paymentSvc │     │  (Push MSG)  │
-└──────────┘     └──────────────┘     └─────────────┘     └──────────────┘
-       │                │                      │                    │
-       │          ┌─────▼──────┐        ┌──────▼──────┐            │
-       │          │  Pending    │        │  Callback   │◀───────────┘
-       │          │  Page (poll)│        │  Controller │  (async)
-       │          └─────┬──────┘        └──────┬──────┘
-       │                │                      │
-       ▼                ▼                      ▼
-┌─────────────────────────────────────────────────────┐
-│                  Finalize Transaction                │
-│  payments.status=completed  tickets.status=paid      │
-│  QR generated  stock decremented  email sent         │
-└─────────────────────────────────────────────────────┘
++----------+     +--------------+     +-------------+     +--------------+
+�  Client   �----?�  Checkout    �----?�  FlexPay API �----?�  User Phone  �
+� (Browser) �     �  Controller  �     �  /paymentSvc �     �  (Push MSG)  �
++----------+     +--------------+     +-------------+     +--------------+
+       �                �                      �                    �
+       �          +-----?------+        +------?------+            �
+       �          �  Pending    �        �  Callback   �?-----------+
+       �          �  Page (poll)�        �  Controller �  (async)
+       �          +------------+        +-------------+
+       �                �                      �
+       ?                ?                      ?
++-----------------------------------------------------+
+�                  Finalize Transaction                �
+�  payments.status=completed  tickets.status=paid      �
+�  QR generated  stock decremented  email sent         �
++-----------------------------------------------------+
 ```
 
 ## Environment Configuration
 
 ```ini
-# .env — FlexPay configuration
+# .env � FlexPay configuration
 FLEXPAY_MERCHANT_CODE=SIMULATED    # "SIMULATED" for local dev, real code for prod
 FLEXPAY_API_URL=https://backend.flexpay.cd/api/rest/v1
 FLEXPAY_API_TOKEN=                 # JWT token (with or without "Bearer " prefix)
 FLEXPAY_CHECK_URL=https://backend.flexpay.cd/api/rest/v1/check
 FLEXPAY_CALLBACK_URL=${APP_URL}/callback/flexpay
 
-# Card (optional — different endpoint, form-encoded)
+# Card (optional � different endpoint, form-encoded)
 FLEXPAY_CARD_API_URL=https://cardpayment.flexpay.cd/v2/pay
 FLEXPAY_CARD_MERCHANT=
 FLEXPAY_CARD_TOKEN=
 
-# Payout (optional — merchant to Mobile Money wallet)
+# Payout (optional � merchant to Mobile Money wallet)
 FLEXPAY_PAYOUT_URL=https://backend.flexpay.cd/api/rest/v1/merchantPayOutService
 
-# Security (production — configure AT LEAST one)
+# Security (production � configure AT LEAST one)
 FLEXPAY_IP_WHITELIST=              # Comma-separated FlexPay source IPs
 FLEXPAY_CALLBACK_TOKEN=            # Shared secret for callback verification
 ```
@@ -132,10 +132,10 @@ CREATE TABLE flexpay_transactions (
 
 The service encapsulates all HTTP communication with FlexPay. Key design decisions:
 
-- **Simulated mode:** When `FLEXPAY_MERCHANT_CODE=SIMULATED`, no real API calls are made — synthetic success responses are returned. This allows full checkout flow testing without real money.
+- **Simulated mode:** When `FLEXPAY_MERCHANT_CODE=SIMULATED`, no real API calls are made � synthetic success responses are returned. This allows full checkout flow testing without real money.
 - **Token normalization:** `normalizeToken()` auto-prepends `Bearer ` if missing, handles both config styles.
 - **Phone normalization:** `normalizePhone()` strips non-digits, handles `00`/`0` prefixes, defaults to `243` (DRC country code).
-- **SSL verification:** Always enabled (`CURLOPT_SSL_VERIFYPEER=true`) — this is a payment partner, never disable in production.
+- **SSL verification:** Always enabled (`CURLOPT_SSL_VERIFYPEER=true`) � this is a payment partner, never disable in production.
 - **Debug logging:** Non-production environments log requests/responses via `error_log()`.
 
 ```php
@@ -156,7 +156,7 @@ class FlexPayService
         $this->callbackUrl = Config::get('FLEXPAY_CALLBACK_URL', '');
     }
 
-    // ── Mode simulation ──────────────────────────────────────────
+    // -- Mode simulation ------------------------------------------
     public static function isSimulated(): bool
     {
         return strtoupper((string) Config::get('FLEXPAY_MERCHANT_CODE', '')) === 'SIMULATED';
@@ -179,7 +179,7 @@ class FlexPayService
         ];
     }
 
-    // ── Initiate Mobile Money ─────────────────────────────────────
+    // -- Initiate Mobile Money -------------------------------------
     public function initiateMobileMoney(
         string $phone,
         string $reference,
@@ -203,7 +203,7 @@ class FlexPayService
         return $this->request('POST', $this->apiUrl . '/paymentService', $body);
     }
 
-    // ── Check Transaction Status ──────────────────────────────────
+    // -- Check Transaction Status ----------------------------------
     public function checkTransaction(string $orderNumber): array
     {
         if (self::isSimulated()) {
@@ -225,7 +225,7 @@ class FlexPayService
         return $this->request('GET', $this->checkUrl . '/' . rawurlencode($orderNumber), null);
     }
 
-    // ── HTTP Core ─────────────────────────────────────────────────
+    // -- HTTP Core -------------------------------------------------
     private function request(string $method, string $url, ?array $body): array
     {
         $headers = [
@@ -240,7 +240,7 @@ class FlexPayService
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);   // Toujours vérifier SSL
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);   // Toujours v�rifier SSL
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
             $headers[] = 'Content-Type: application/json';
@@ -275,7 +275,7 @@ class FlexPayService
         ];
     }
 
-    // ── Helpers ───────────────────────────────────────────────────
+    // -- Helpers ---------------------------------------------------
     private static function normalizeToken(string $token): string
     {
         $token = trim($token);
@@ -300,7 +300,7 @@ class FlexPayService
 
 ### 2. Transaction Audit Log (FlexPayTransaction model)
 
-**Every single API interaction is logged.** This is non-negotiable — without it, debugging payment issues is impossible.
+**Every single API interaction is logged.** This is non-negotiable � without it, debugging payment issues is impossible.
 
 ```php
 class FlexPayTransaction
@@ -342,14 +342,14 @@ class FlexPayTransaction
 The checkout follows a strict sequence. Never skip steps.
 
 ```
-1. show()         → Display checkout form (ticket type, quantity, phone)
-2. start()        → Validate CSRF + stock + phone → Create pending Payment + Ticket →
-                    Initiate FlexPay → Log transaction → Redirect to pending
-3. pending()      → Show "Confirm on your phone" page with JS polling
-4. pollStatus()   → JSON endpoint: check FlexPay status every 3s → finalize on success
-5. success()      → Show confirmation with QR code
-   cancel()       → User cancelled
-   decline()      → Payment declined
+1. show()         ? Display checkout form (ticket type, quantity, phone)
+2. start()        ? Validate CSRF + stock + phone ? Create pending Payment + Ticket ?
+                    Initiate FlexPay ? Log transaction ? Redirect to pending
+3. pending()      ? Show "Confirm on your phone" page with JS polling
+4. pollStatus()   ? JSON endpoint: check FlexPay status every 3s ? finalize on success
+5. success()      ? Show confirmation with QR code
+   cancel()       ? User cancelled
+   decline()      ? Payment declined
 ```
 
 **Key implementation details for `start()`:**
@@ -360,9 +360,9 @@ public function start(array $params = []): void
     Auth::requireAuth();
     $user = Auth::user();
 
-    // 1. CSRF protection — ALWAYS verify before any payment operation
+    // 1. CSRF protection � ALWAYS verify before any payment operation
     if (!Session::verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-        Session::setFlash('error', 'Session invalide, veuillez réessayer.');
+        Session::setFlash('error', 'Session invalide, veuillez r�essayer.');
         $this->redirect('/event/' . $params['slug']);
     }
 
@@ -415,7 +415,7 @@ public function start(array $params = []): void
     if (!$ok) {
         Ticket::markCancelled($ticketId);
         Payment::updateStatus($paymentId, 'failed');
-        Session::setFlash('error', 'Échec du paiement: ' . ($resp['data']['message'] ?? 'Erreur inconnue'));
+        Session::setFlash('error', '�chec du paiement: ' . ($resp['data']['message'] ?? 'Erreur inconnue'));
         $this->redirect('/event/' . $event['slug']);
     }
 
@@ -427,7 +427,7 @@ public function start(array $params = []): void
 
 ### 4. Polling Mechanism (pending.php + pollStatus)
 
-The pending page polls a JSON endpoint every 3 seconds. This is the **client-side resolution path** — the callback is the server-side path. Both can trigger finalization; the atomic status update prevents double-processing.
+The pending page polls a JSON endpoint every 3 seconds. This is the **client-side resolution path** � the callback is the server-side path. Both can trigger finalization; the atomic status update prevents double-processing.
 
 **JavaScript polling (in the pending view):**
 
@@ -449,11 +449,11 @@ The pending page polls a JSON endpoint every 3 seconds. This is the **client-sid
           return;
         }
         if (j.status === 'failed' || j.status === 'cancelled') {
-          showError('Paiement échoué.');
+          showError('Paiement �chou�.');
           return;
         }
         if (attempts >= maxAttempts) {
-          showError('Délai dépassé. Contactez le support.');
+          showError('D�lai d�pass�. Contactez le support.');
           return;
         }
         setTimeout(check, 3000);
@@ -555,7 +555,7 @@ class CallbackController extends Controller
             $payment = Payment::findByReference($reference);
         }
 
-        // 4. ALWAYS log — even unknown payments — for audit trail
+        // 4. ALWAYS log � even unknown payments � for audit trail
         FlexPayTransaction::log([
             'direction' => 'callback',
             'order_number' => $orderNumber,
@@ -575,7 +575,7 @@ class CallbackController extends Controller
             return;
         }
 
-        // 5. Replay protection — only process pending payments
+        // 5. Replay protection � only process pending payments
         if ($payment['status'] !== 'pending') {
             http_response_code(200);
             echo 'already processed';
@@ -596,7 +596,7 @@ class CallbackController extends Controller
 }
 ```
 
-### 6. Finalize — Atomic Completion
+### 6. Finalize � Atomic Completion
 
 `finalize()` is called from two paths (poll + callback). It MUST be idempotent and race-condition safe.
 
@@ -605,10 +605,10 @@ public static function finalize(int $paymentId, ?string $channel = null): void
 {
     $payment = Payment::findById($paymentId);
     if (!$payment || $payment['status'] === 'completed') {
-        return;  // Already finalized — idempotent
+        return;  // Already finalized � idempotent
     }
 
-    // Atomic flip — prevents race between poll and callback
+    // Atomic flip � prevents race between poll and callback
     if (!Payment::updateStatusAtomically($paymentId, 'completed', $channel)) {
         return;  // Another process already finalized this
     }
@@ -636,21 +636,21 @@ public static function finalize(int $paymentId, ?string $channel = null): void
 
 ### Critical (must have in production)
 
-1. **CSRF on all payment forms** — Verify `Session::verifyCsrfToken()` before any money-moving operation
-2. **Callback verification** — IP whitelist OR shared secret token (see `callerIsTrusted()` above). Never trust unverified callbacks in production (CWE-345)
-3. **Replay protection** — `updateStatusAtomically()` ensures `pending → completed` transition happens exactly once
-4. **SSL verification** — `CURLOPT_SSL_VERIFYPEER=true` always (payment partner)
+1. **CSRF on all payment forms** � Verify `Session::verifyCsrfToken()` before any money-moving operation
+2. **Callback verification** � IP whitelist OR shared secret token (see `callerIsTrusted()` above). Never trust unverified callbacks in production (CWE-345)
+3. **Replay protection** � `updateStatusAtomically()` ensures `pending ? completed` transition happens exactly once
+4. **SSL verification** � `CURLOPT_SSL_VERIFYPEER=true` always (payment partner)
 
 ### High Priority
-5. **Unique references** — Include timestamp + random bytes to prevent collision
-6. **Audit log** — Log every FlexPay interaction (outbound, check, callback) with raw request/response
-7. **Self-purchase block** — Organizers cannot buy their own tickets (prevents money laundering via payouts)
-8. **Stock check before FlexPay call** — Don't initiate payment if stock is insufficient
+5. **Unique references** � Include timestamp + random bytes to prevent collision
+6. **Audit log** � Log every FlexPay interaction (outbound, check, callback) with raw request/response
+7. **Self-purchase block** � Organizers cannot buy their own tickets (prevents money laundering via payouts)
+8. **Stock check before FlexPay call** � Don't initiate payment if stock is insufficient
 
 ### Medium Priority
-9. **Polling timeout** — Max 2 minutes (40 attempts × 3s), then show support contact
-10. **Idempotent finalize** — Safe to call multiple times from poll + callback
-11. **Atomic operations** — Use `WHERE status = 'pending'` guards on all status transitions
+9. **Polling timeout** � Max 2 minutes (40 attempts � 3s), then show support contact
+10. **Idempotent finalize** � Safe to call multiple times from poll + callback
+11. **Atomic operations** � Use `WHERE status = 'pending'` guards on all status transitions
 
 ## FlexPay API Reference
 
@@ -670,7 +670,7 @@ Content-Type: application/json
     "callbackUrl": "https://yourdomain.com/callback/flexpay"
 }
 
-Response: { "code": "0", "message": "Transaction envoyée...", "orderNumber": "9bsTX7qXdpQe243815877848" }
+Response: { "code": "0", "message": "Transaction envoy�e...", "orderNumber": "9bsTX7qXdpQe243815877848" }
 ```
 
 ### Check Transaction
@@ -689,7 +689,7 @@ Response: {
 }
 ```
 
-### Callback (FlexPay → You)
+### Callback (FlexPay ? You)
 ```
 POST {FLEXPAY_CALLBACK_URL}
 Content-Type: application/json
@@ -708,15 +708,15 @@ Content-Type: application/json
 Your response: HTTP 200 "OK"
 ```
 
-## Simulated Mode — Local Testing
+## Simulated Mode � Local Testing
 
 Set `FLEXPAY_MERCHANT_CODE=SIMULATED` in `.env`. The service returns synthetic success without network calls.
 
 **Full E2E test flow:**
 1. Register user, create event, publish
-2. Click "Acheter" → select ticket → enter phone → submit
-3. Redirected to `/checkout/pending/{id}` → JS polls every 3s
-4. Simulated check returns `status=0` → redirect to success page
+2. Click "Acheter" ? select ticket ? enter phone ? submit
+3. Redirected to `/checkout/pending/{id}` ? JS polls every 3s
+4. Simulated check returns `status=0` ? redirect to success page
 5. Verify: `payments.status=completed`, `tickets.status=paid`, `qr_code` set, `quantity_sold` incremented, `flexpay_transactions` logged
 
 ## Common Mistakes
@@ -724,50 +724,50 @@ Set `FLEXPAY_MERCHANT_CODE=SIMULATED` in `.env`. The service returns synthetic s
 | Mistake | Fix |
 |---------|-----|
 | Reusing PDO placeholders (`:phone` twice) | Use unique names: `:phone_init`, `:phone_check` (EMULATE_PREPARES=false) |
-| Not logging the FlexPay response before checking `ok` | Log FIRST, then handle error — otherwise failed attempts leave no trace |
-| Calling FlexPay before creating the payment record | Create pending payment first — if FlexPay succeeds but your DB insert fails, you lose track |
+| Not logging the FlexPay response before checking `ok` | Log FIRST, then handle error � otherwise failed attempts leave no trace |
+| Calling FlexPay before creating the payment record | Create pending payment first � if FlexPay succeeds but your DB insert fails, you lose track |
 | `CURLOPT_SSL_VERIFYPEER=false` | Always `true` for payment partners. Use staging credentials for dev, not SSL disable |
 | Not handling the `code` field as string | FlexPay returns `"0"` (string), not `0` (int). Use `(string) $code === '0'` |
-| Redirecting to success URL before finalize completes | The success page reads from DB — finalize must complete before the redirect |
+| Redirecting to success URL before finalize completes | The success page reads from DB � finalize must complete before the redirect |
 | Missing the `type: "1"` field in initiation | Without `type: 1`, FlexPay doesn't know it's Mobile Money (not card) |
-| In Next.js: calling FlexPay from Client Component | FlexPay API calls MUST go through Route Handlers or Server Actions — the token must never reach the browser |
-| In Next.js: using `fetch` directly in `"use client"` | Move the fetch to a Route Handler (`/api/checkout/route.ts`) — client fetches your endpoint, not FlexPay directly |
+| In Next.js: calling FlexPay from Client Component | FlexPay API calls MUST go through Route Handlers or Server Actions � the token must never reach the browser |
+| In Next.js: using `fetch` directly in `"use client"` | Move the fetch to a Route Handler (`/api/checkout/route.ts`) � client fetches your endpoint, not FlexPay directly |
 
 ---
 
 ## Next.js Integration (App Router)
 
-This section mirrors the PHP implementation in Next.js 14+ App Router patterns. The architecture is identical — the code is idiomatic to Next.js.
+This section mirrors the PHP implementation in Next.js 14+ App Router patterns. The architecture is identical � the code is idiomatic to Next.js.
 
 ### Project Structure
 
 ```
 src/
-├── app/
-│   ├── api/
-│   │   ├── checkout/
-│   │   │   ├── start/route.ts        # POST — initiate payment
-│   │   │   └── [id]/
-│   │   │       ├── status/route.ts   # GET — poll status
-│   │   │       └── finalize/route.ts # POST — complete payment
-│   │   └── callback/
-│   │       └── flexpay/route.ts      # POST — FlexPay webhook (public)
-│   ├── checkout/
-│   │   ├── [eventSlug]/
-│   │   │   └── page.tsx              # Checkout form (Client Component)
-│   │   └── pending/
-│   │       └── [paymentId]/
-│   │           └── page.tsx          # Waiting page with polling
-│   └── payment/
-│       ├── success/[id]/page.tsx
-│       ├── cancel/page.tsx
-│       └── decline/page.tsx
-├── lib/
-│   ├── flexpay.ts                    # FlexPayService (server-only)
-│   ├── db.ts                         # Prisma/Drizzle client
-│   └── utils.ts                      # Helpers (normalizePhone, buildReference)
-└── prisma/
-    └── schema.prisma                 # Payment + FlexPayTransaction models
++-- app/
+�   +-- api/
+�   �   +-- checkout/
+�   �   �   +-- start/route.ts        # POST � initiate payment
+�   �   �   +-- [id]/
+�   �   �       +-- status/route.ts   # GET � poll status
+�   �   �       +-- finalize/route.ts # POST � complete payment
+�   �   +-- callback/
+�   �       +-- flexpay/route.ts      # POST � FlexPay webhook (public)
+�   +-- checkout/
+�   �   +-- [eventSlug]/
+�   �   �   +-- page.tsx              # Checkout form (Client Component)
+�   �   +-- pending/
+�   �       +-- [paymentId]/
+�   �           +-- page.tsx          # Waiting page with polling
+�   +-- payment/
+�       +-- success/[id]/page.tsx
+�       +-- cancel/page.tsx
+�       +-- decline/page.tsx
++-- lib/
+�   +-- flexpay.ts                    # FlexPayService (server-only)
+�   +-- db.ts                         # Prisma/Drizzle client
+�   +-- utils.ts                      # Helpers (normalizePhone, buildReference)
++-- prisma/
+    +-- schema.prisma                 # Payment + FlexPayTransaction models
 ```
 
 ### Environment Variables (`.env.local`)
@@ -779,7 +779,7 @@ FLEXPAY_API_TOKEN=
 FLEXPAY_CHECK_URL=https://backend.flexpay.cd/api/rest/v1/check
 FLEXPAY_CALLBACK_URL=${NEXT_PUBLIC_APP_URL}/api/callback/flexpay
 
-# Security — configure AT LEAST one in production
+# Security � configure AT LEAST one in production
 FLEXPAY_IP_WHITELIST=
 FLEXPAY_CALLBACK_TOKEN=
 
@@ -788,10 +788,10 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ### 1. FlexPay Service (`lib/flexpay.ts`)
 
-This is a **server-only** module — never import in `"use client"` files. Uses native `fetch()` instead of cURL.
+This is a **server-only** module � never import in `"use client"` files. Uses native `fetch()` instead of cURL.
 
 ```typescript
-// lib/flexpay.ts — SERVER ONLY (never "use client")
+// lib/flexpay.ts � SERVER ONLY (never "use client")
 import "server-only";
 
 const API_URL = (process.env.FLEXPAY_API_URL || "https://backend.flexpay.cd/api/rest/v1").replace(/\/+$/, "");
@@ -824,7 +824,7 @@ export function buildReference(eventId: number, userId: number): string {
   return `EVT${eventId}-U${userId}-${Date.now()}-${rand}`;
 }
 
-// ── Types ──────────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------
 export interface FlexPayInitResponse {
   ok: boolean;
   httpCode: number;
@@ -856,7 +856,7 @@ export interface FlexPayCheckResponse {
   rawResponse: string;
 }
 
-// ── Core ───────────────────────────────────────────────────────────
+// -- Core -----------------------------------------------------------
 export async function initiateMobileMoney(
   phone: string,
   reference: string,
@@ -1033,7 +1033,7 @@ model FlexPayTransaction {
 }
 ```
 
-### 3. Route Handler — Initiate Payment (`app/api/checkout/start/route.ts`)
+### 3. Route Handler � Initiate Payment (`app/api/checkout/start/route.ts`)
 
 ```typescript
 // app/api/checkout/start/route.ts
@@ -1058,9 +1058,9 @@ export async function POST(req: NextRequest) {
   // 2. Parse + validate
   const { eventSlug, ticketTypeId, quantity, phone } = await req.json();
 
-  // 3. Fetch event & ticket type from DB…
+  // 3. Fetch event & ticket type from DB�
   // const event = await prisma.event.findUnique({ where: { slug: eventSlug } });
-  // … validate stock, block self-purchase, etc.
+  // � validate stock, block self-purchase, etc.
 
   const totalPrice = 25.0; // from ticketType.price * quantity
   const reference = buildReference(1, userId); // event.id, user.id
@@ -1121,7 +1121,7 @@ export async function POST(req: NextRequest) {
 }
 ```
 
-### 4. Route Handler — Poll Status (`app/api/checkout/[id]/status/route.ts`)
+### 4. Route Handler � Poll Status (`app/api/checkout/[id]/status/route.ts`)
 
 ```typescript
 // app/api/checkout/[id]/status/route.ts
@@ -1189,7 +1189,7 @@ export async function GET(
 }
 ```
 
-### 5. Client Component — Checkout Form (`app/checkout/[eventSlug]/page.tsx`)
+### 5. Client Component � Checkout Form (`app/checkout/[eventSlug]/page.tsx`)
 
 ```tsx
 "use client";
@@ -1228,7 +1228,7 @@ export default function CheckoutPage({ params }: { params: { eventSlug: string }
         return;
       }
 
-      router.push(data.redirect); // → /checkout/pending/{id}
+      router.push(data.redirect); // ? /checkout/pending/{id}
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -1248,7 +1248,7 @@ export default function CheckoutPage({ params }: { params: { eventSlug: string }
 
       <div>
         <label className="block text-sm font-mono uppercase tracking-wider mb-2">
-          Quantité
+          Quantit�
         </label>
         <select
           value={quantity}
@@ -1263,7 +1263,7 @@ export default function CheckoutPage({ params }: { params: { eventSlug: string }
 
       <div>
         <label className="block text-sm font-mono uppercase tracking-wider mb-2">
-          Numéro Mobile Money
+          Num�ro Mobile Money
         </label>
         <input
           type="tel"
@@ -1288,7 +1288,7 @@ export default function CheckoutPage({ params }: { params: { eventSlug: string }
 }
 ```
 
-### 6. Client Component — Pending Page with Polling (`app/checkout/pending/[paymentId]/page.tsx`)
+### 6. Client Component � Pending Page with Polling (`app/checkout/pending/[paymentId]/page.tsx`)
 
 ```tsx
 "use client";
@@ -1321,11 +1321,11 @@ export default function PendingPage({
           return;
         }
         if (data.status === "failed" || data.status === "cancelled") {
-          setMessage("Paiement échoué. Veuillez réessayer.");
+          setMessage("Paiement �chou�. Veuillez r�essayer.");
           return;
         }
         if (attempts.current >= MAX_ATTEMPTS) {
-          setMessage("Délai dépassé. Contactez le support si le paiement a été débité.");
+          setMessage("D�lai d�pass�. Contactez le support si le paiement a �t� d�bit�.");
           return;
         }
         setTimeout(check, 3000);
@@ -1349,7 +1349,7 @@ export default function PendingPage({
         Confirmation en attente
       </h2>
       <p className="text-on-surface-variant mb-4">
-        Veuillez confirmer le push sur votre téléphone pour finaliser le paiement.
+        Veuillez confirmer le push sur votre t�l�phone pour finaliser le paiement.
       </p>
       {message && (
         <p className="text-sm text-red-400 mt-4">{message}</p>
@@ -1362,7 +1362,7 @@ export default function PendingPage({
 ### 7. Callback Route Handler (`app/api/callback/flexpay/route.ts`)
 
 ```typescript
-// app/api/callback/flexpay/route.ts — PUBLIC (no auth)
+// app/api/callback/flexpay/route.ts � PUBLIC (no auth)
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { logFlexPayTransaction } from "@/lib/audit";
@@ -1381,7 +1381,7 @@ function callerIsTrusted(req: NextRequest): boolean {
       req.headers.get("x-real-ip") ||
       "127.0.0.1";
     if (!ipList.includes(remote)) {
-      console.error(`[FlexPay callback] IP rejetée: ${remote}`);
+      console.error(`[FlexPay callback] IP rejet�e: ${remote}`);
       return false;
     }
   }
@@ -1400,7 +1400,7 @@ function callerIsTrusted(req: NextRequest): boolean {
       provided.length !== secret.length ||
       !crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(secret))
     ) {
-      console.error("[FlexPay callback] Jeton partagé invalide");
+      console.error("[FlexPay callback] Jeton partag� invalide");
       return false;
     }
   }
@@ -1485,7 +1485,7 @@ export async function POST(req: NextRequest) {
 ### 8. Finalize Payment (`lib/finalize.ts`)
 
 ```typescript
-// lib/finalize.ts — SERVER ONLY
+// lib/finalize.ts � SERVER ONLY
 import "server-only";
 import { prisma } from "@/lib/db";
 import crypto from "crypto";
@@ -1494,7 +1494,7 @@ export async function finalizePayment(
   paymentId: number,
   channel?: string | null
 ): Promise<boolean> {
-  // Atomic flip — prevents race between poll and callback
+  // Atomic flip � prevents race between poll and callback
   const updated = await prisma.payment.updateMany({
     where: { id: paymentId, status: "pending" },
     data: {
@@ -1560,7 +1560,7 @@ export async function startCheckout(
   formData: FormData
 ): Promise<{ error?: string; paymentId?: number }> {
   const session = await getServerSession();
-  if (!session?.user?.id) return { error: "Vous devez être connecté." };
+  if (!session?.user?.id) return { error: "Vous devez �tre connect�." };
 
   const phone = (formData.get("phone") as string)?.trim() || "";
   const quantity = Number(formData.get("quantity")) || 1;
@@ -1568,10 +1568,10 @@ export async function startCheckout(
   const userId = Number(session.user.id);
 
   if (!phone.match(/^[0-9+\s]{9,15}$/)) {
-    return { error: "Numéro de téléphone invalide." };
+    return { error: "Num�ro de t�l�phone invalide." };
   }
 
-  // … validate event, stock, self-purchase, etc …
+  // � validate event, stock, self-purchase, etc �
   const totalPrice = 25.0;
   const reference = buildReference(1, userId);
 
@@ -1609,7 +1609,7 @@ export async function startCheckout(
       where: { id: payment.id },
       data: { status: "failed" },
     });
-    return { error: resp.data?.message || "Échec de l'initialisation du paiement." };
+    return { error: resp.data?.message || "�chec de l'initialisation du paiement." };
   }
 
   await prisma.payment.update({
@@ -1626,32 +1626,32 @@ export async function startCheckout(
 
 | Concern | Solution |
 |---------|----------|
-| FlexPay token exposed to browser | `lib/flexpay.ts` uses `import "server-only"` — cannot be imported in Client Components |
+| FlexPay token exposed to browser | `lib/flexpay.ts` uses `import "server-only"` � cannot be imported in Client Components |
 | CSRF on Server Actions | Next.js 14+ auto-includes CSRF tokens on Server Actions (POST-only) |
 | CSRF on Route Handlers | Add your own token check or use `next-auth` CSRF |
 | Callback endpoint public | Verify with IP whitelist (`x-forwarded-for` + `x-real-ip`) AND/OR shared secret token |
 | Race condition (poll + callback) | `updateMany({ where: { status: "pending" } })` ensures exactly one wins |
 | Request timeout | `AbortSignal.timeout(30_000)` on FlexPay calls, 15s on check |
 | Rate limiting | Add `@upstash/ratelimit` or similar on `/api/checkout/start` |
-| Environment variables | `FLEXPAY_*` vars are NOT prefixed with `NEXT_PUBLIC_` — they stay server-side |
+| Environment variables | `FLEXPAY_*` vars are NOT prefixed with `NEXT_PUBLIC_` � they stay server-side |
 
 ### Next.js File Checklist
 
 ```
-□ lib/flexpay.ts              — Service (initiate, check, helpers)
-□ lib/finalize.ts             — Atomic finalize + QR + email
-□ lib/audit.ts                — logFlexPayTransaction() wrapper
-□ lib/db.ts                   — Prisma/Drizzle client
-□ app/api/checkout/start/route.ts      — POST initiate
-□ app/api/checkout/[id]/status/route.ts — GET poll
-□ app/api/callback/flexpay/route.ts    — POST webhook (public)
-□ app/checkout/[eventSlug]/page.tsx    — Checkout form (Client)
-□ app/checkout/pending/[id]/page.tsx   — Polling page (Client)
-□ app/payment/success/[id]/page.tsx    — Success page
-□ app/payment/cancel/page.tsx          — Cancel page
-□ app/payment/decline/page.tsx         — Decline page
-□ prisma/schema.prisma                 — Payment + FlexPayTransaction models
-□ .env.local                           — FlexPay env vars
+? lib/flexpay.ts              � Service (initiate, check, helpers)
+? lib/finalize.ts             � Atomic finalize + QR + email
+? lib/audit.ts                � logFlexPayTransaction() wrapper
+? lib/db.ts                   � Prisma/Drizzle client
+? app/api/checkout/start/route.ts      � POST initiate
+? app/api/checkout/[id]/status/route.ts � GET poll
+? app/api/callback/flexpay/route.ts    � POST webhook (public)
+? app/checkout/[eventSlug]/page.tsx    � Checkout form (Client)
+? app/checkout/pending/[id]/page.tsx   � Polling page (Client)
+? app/payment/success/[id]/page.tsx    � Success page
+? app/payment/cancel/page.tsx          � Cancel page
+? app/payment/decline/page.tsx         � Decline page
+? prisma/schema.prisma                 � Payment + FlexPayTransaction models
+? .env.local                           � FlexPay env vars
 ```
 
 ---
@@ -1659,12 +1659,380 @@ export async function startCheckout(
 ## Routes to Define (PHP)
 
 ```
-GET  /checkout/{slug}                    → show checkout form
-POST /checkout/{slug}/start              → initiate payment
-GET  /checkout/pending/{id}              → waiting page with polling JS
-GET  /checkout/pending/{id}/status       → JSON poll endpoint
-GET  /payment/success/{id}               → success page
-GET  /payment/cancel                     → cancelled page
-GET  /payment/decline                    → declined page
-POST /callback/flexpay                   → Mobile Money callback (public, no auth)
+GET  /checkout/{slug}                    ? show checkout form
+POST /checkout/{slug}/start              ? initiate payment
+GET  /checkout/pending/{id}              ? waiting page with polling JS
+GET  /checkout/pending/{id}/status       ? JSON poll endpoint
+GET  /payment/success/{id}               ? success page
+GET  /payment/cancel                     ? cancelled page
+GET  /payment/decline                    ? declined page
+POST /callback/flexpay                   ? Mobile Money callback (public, no auth)
 ```
+
+
+---
+
+## Variante 2 : Architecture Laravel + Firebase/Firestore (Pattern Viteat)
+
+# FlexPay Mobile Money Integration (Laravel + Firestore)
+
+## Overview
+
+FlexPay.cd is a DRC payment gateway that processes Mobile Money (Airtel Money, M-Pesa, AfriMoney, Orange Money).
+Ce document décrit l'intégration de FlexPaie au sein d'une architecture **Laravel utilisant Firestore** pour la persistance des données. C'est la méthode exacte utilisée dans le projet Viteat 9.2.
+
+**Principe de base :**
+1. **Initiation** : L'utilisateur lance le paiement. Le serveur crée un document dans `mobile_money_payments/{reference}` avec le statut `pending` et appelle l'API FlexPay.
+2. **Polling / Callback** : Le client interroge l'état via `flexpayStatus` et FlexPay envoie un callback asynchrone sur `flexpayCallback`. Ces deux processus mettent à jour Firestore.
+3. **Confirmation** : Une fois complété, `flexpayConfirm` valide le montant, la devise et l'identité avant de clôturer le panier/la commande.
+
+## Environnement & Configuration
+
+Les clés ne sont pas hardcodées dans un fichier `.env`. Elles sont lues dynamiquement depuis Firestore dans la collection `settings/flexpay_settings` et sécurisées en backend.
+Certaines variables optionnelles peuvent être présentes dans `.env` :
+
+```ini
+# Fallbacks .env optionnels
+FLEXPAY_MERCHANT_CODE=SIMULATED
+FLEXPAY_API_TOKEN=
+FLEXPAY_IP_WHITELIST=156.0.198.27,156.0.198.19
+FLEXPAY_STRICT_IP=true
+```
+
+## 1. Service API : `FlexPayService.php`
+
+Ce service s'occupe uniquement des appels cURL vers l'API FlexPay. Il accepte un constructeur dynamique pour lire les clés venant de Firestore.
+
+```php
+<?php
+
+namespace App\Services;
+
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
+
+class FlexPayService
+{
+    private string $apiUrl;
+    private string $apiToken;
+    private string $merchantCode;
+    private string $checkUrl;
+
+    public function __construct(string $merchantCode, string $apiToken)
+    {
+        $this->apiUrl = rtrim(Config::get('FLEXPAY_API_URL', 'https://backend.flexpay.cd/api/rest/v1'), '/');
+        $this->apiToken = self::normalizeToken($apiToken);
+        $this->merchantCode = $merchantCode;
+        $this->checkUrl = rtrim(Config::get('FLEXPAY_CHECK_URL', $this->apiUrl . '/check'), '/');
+    }
+
+    public static function isSimulated(string $merchantCode): bool
+    {
+        return strtoupper(trim($merchantCode)) === 'SIMULATED';
+    }
+
+    private function simulatedResponse(string $reference): array
+    {
+        $orderNumber = 'SIM' . substr(bin2hex(random_bytes(8)), 0, 16) . time();
+        return [
+            'ok' => true,
+            'http_code' => 200,
+            'error' => null,
+            'data' => [
+                'code' => '0',
+                'message' => 'Simulated transaction',
+                'orderNumber' => $orderNumber,
+            ],
+        ];
+    }
+
+    public function initiateMobileMoney(string $phone, string $reference, float $amount, string $currency = 'USD', ?string $callbackUrl = null): array
+    {
+        if (self::isSimulated($this->merchantCode)) {
+            return $this->simulatedResponse($reference);
+        }
+
+        $body = [
+            'merchant'    => $this->merchantCode,
+            'type'        => '1',
+            'phone'       => self::normalizePhone($phone),
+            'reference'   => $reference,
+            'amount'      => (string) $amount,
+            'currency'    => $currency,
+        ];
+
+        if ($callbackUrl) {
+            $body['callbackUrl'] = $callbackUrl;
+        }
+
+        return $this->request('POST', $this->apiUrl . '/paymentService', $body);
+    }
+
+    public function checkTransaction(string $orderNumber): array
+    {
+        if (self::isSimulated($this->merchantCode)) {
+            return [
+                'ok' => true,
+                'http_code' => 200,
+                'error' => null,
+                'data' => [
+                    'code' => '0',
+                    'message' => 'Simulated transaction',
+                    'transaction' => [
+                        'orderNumber' => $orderNumber,
+                        'status' => '0',
+                        'channel' => 'simulated',
+                    ],
+                ],
+            ];
+        }
+        return $this->request('GET', $this->checkUrl . '/' . rawurlencode($orderNumber), null);
+    }
+
+    private function request(string $method, string $url, ?array $body): array
+    {
+        $headers = [
+            'Accept: application/json',
+            'Authorization: ' . $this->apiToken,
+        ];
+
+        $bodyJson = $body ? json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : null;
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // ou true en prod absolue stricte
+        
+        if ($method === 'POST') {
+            curl_setopt($ch, CURLOPT_POST, true);
+            $headers[] = 'Content-Type: application/json';
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $bodyJson);
+        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+        $raw = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($raw === false) {
+            Log::error('FlexPayService request failed: ' . ($err ?: 'curl_exec failed'), [
+                'method' => $method,
+                'url' => $url,
+            ]);
+            return ['ok' => false, 'error' => $err ?: 'curl_exec failed', 'data' => null];
+        }
+
+        $decoded = json_decode($raw, true);
+        Log::info('FlexPayService response', [
+            'method' => $method,
+            'url' => $url,
+            'http_code' => $httpCode,
+            'response' => $decoded,
+        ]);
+        return [
+            'ok' => $httpCode >= 200 && $httpCode < 300,
+            'http_code' => $httpCode,
+            'error' => null,
+            'data' => is_array($decoded) ? $decoded : null,
+        ];
+    }
+
+    private static function normalizeToken(string $token): string
+    {
+        $token = trim($token);
+        if ($token === '') return '';
+        return stripos($token, 'Bearer ') === 0 ? $token : 'Bearer ' . $token;
+    }
+
+    private static function normalizePhone(string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', $phone);
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        } elseif (str_starts_with($digits, '0')) {
+            $digits = '243' . substr($digits, 1);
+        } elseif (!str_starts_with($digits, '243') && strlen($digits) === 9) {
+            $digits = '243' . $digits;
+        }
+        return $digits;
+    }
+}
+```
+
+## 2. Implémentation du Contrôleur (Firestore)
+
+Les méthodes sont intégrées dans le contrôleur principal (ex: `SecurePaymentController`), et stockent l'état dans Firestore `mobile_money_payments/{reference}` via un `FirebaseService` injecté (`$this->fs`).
+
+### 2.1. Initialisation (`flexpayInit`)
+Crée un document Firestore "pending" avant d'appeler l'API FlexPay. Si succès, ajoute l'`orderNumber`.
+
+```php
+public function flexpayInit(Request $request)
+{
+    $amount = (float) $request->input('amount', 0);
+    $phone = $request->input('phone', '');
+    $currency = strtoupper((string) $request->input('currency', 'USD'));
+    $reference = 'WEB' . time() . rand(1000, 9999);
+    $uid = Auth::user()->uuid ?? ''; // Adaptation selon votre système de User
+
+    try {
+        $this->fs->patchDoc('mobile_money_payments/' . $reference, [
+            'amount' => $amount,
+            'currency' => $currency,
+            'phone' => $phone,
+            'reference' => $reference,
+            'status' => 'pending',
+            'userId' => $uid,
+            'createdAt' => time() * 1000,
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json(['status' => false, 'message' => 'Could not initialize payment.']);
+    }
+
+    // Récupère les clés depuis Firestore "settings/flexpay_settings"
+    $doc = $this->gatewayDoc('flexpay');
+    $merchantCode = (string) (env('FLEXPAY_MERCHANT_CODE') ?: ($doc['merchantCode'] ?? ''));
+    $apiToken = (string) (env('FLEXPAY_API_TOKEN') ?: ($doc['apiToken'] ?? ''));
+    
+    $flexpay = new \App\Services\FlexPayService($merchantCode, $apiToken);
+    $callbackUrl = route('payments.flexpay.callback');
+    $res = $flexpay->initiateMobileMoney($phone, $reference, $amount, $currency, $callbackUrl);
+
+    if (!$res['ok']) {
+        return response()->json(['status' => false, 'message' => $res['data']['message'] ?? 'Erreur FlexPay']);
+    }
+
+    $orderNumber = $res['data']['orderNumber'] ?? null;
+    if ($orderNumber) {
+        $this->fs->patchDoc('mobile_money_payments/' . $reference, ['orderNumber' => $orderNumber]);
+    }
+
+    return response()->json([
+        'status' => true,
+        'data' => [
+            'reference' => $reference,
+            'orderNumber' => $orderNumber,
+            'message' => 'Paiement initié avec succès.'
+        ]
+    ]);
+}
+```
+
+### 2.2. Polling Client (`flexpayStatus`)
+Permet au frontend de vérifier le statut. Interroge Firestore puis FlexPay si nécessaire, et corrige le statut Firestore.
+
+```php
+public function flexpayStatus(Request $request)
+{
+    $reference = (string) $request->input('reference', '');
+    $orderNumber = (string) $request->input('orderNumber', '');
+
+    if (!$orderNumber && $reference) {
+        $doc = $this->fs->getDoc('mobile_money_payments/' . $reference);
+        $orderNumber = (string) ($doc['orderNumber'] ?? '');
+        if (($doc['status'] ?? '') === 'completed') {
+            return response()->json(['status' => 'completed', 'message' => 'Paiement validé']);
+        }
+    }
+
+    if (!$orderNumber) {
+        return response()->json(['status' => 'pending', 'message' => 'En attente...']);
+    }
+
+    $flexpay = new \App\Services\FlexPayService(env('FLEXPAY_MERCHANT_CODE'), env('FLEXPAY_API_TOKEN'));
+    $res = $flexpay->checkTransaction($orderNumber);
+
+    $status = strtolower((string) ($res['data']['transaction']['status'] ?? ''));
+    
+    if (in_array($status, ['0', 'completed', 'successful', 'success', 'approved'])) {
+        if ($reference) $this->fs->patchDoc('mobile_money_payments/' . $reference, ['status' => 'completed']);
+        return response()->json(['status' => 'completed', 'message' => 'Paiement réussi']);
+    }
+
+    if (in_array($status, ['1', 'failed', 'declined', 'error'])) {
+        if ($reference) $this->fs->patchDoc('mobile_money_payments/' . $reference, ['status' => 'failed']);
+        return response()->json(['status' => 'failed', 'message' => 'Paiement échoué']);
+    }
+
+    return response()->json(['status' => 'pending', 'message' => 'En attente de code PIN']);
+}
+```
+
+### 2.3. Callback Serveur Asynchrone (`flexpayCallback`)
+FlexPay envoie une requête POST sur ce webhook. Validation de l'IP appelante et mise à jour Firestore idempotente.
+*Note: Cette route doit être exclue du middleware `VerifyCsrfToken`.*
+
+```php
+public function flexpayCallback(Request $request)
+{
+    $allowedIps = array_filter(array_map('trim', explode(',', env('FLEXPAY_IP_WHITELIST', '156.0.198.27,156.0.198.19'))));
+    $clientIp = $request->header('x-forwarded-for') ? explode(',', $request->header('x-forwarded-for'))[0] : $request->ip();
+
+    if (!empty($allowedIps) && !in_array($clientIp, $allowedIps)) {
+        return response()->json(['status' => false, 'message' => 'Unauthorized IP'], 403);
+    }
+
+    $reference = (string) ($request->input('reference') ?? $request->input('orderNumber'));
+    $code = strtolower((string) ($request->input('code') ?? ($request->input('status') ?? '')));
+
+    $payment = $this->fs->getDoc('mobile_money_payments/' . $reference);
+    if (($payment['status'] ?? '') === 'completed') {
+        return response()->json(['status' => true, 'message' => 'Already processed']);
+    }
+
+    $newStatus = in_array($code, ['0', 'completed', 'success']) ? 'completed' : 'failed';
+    $this->fs->patchDoc('mobile_money_payments/' . $reference, ['status' => $newStatus, 'updatedAt' => time() * 1000]);
+
+    return response()->json(['status' => true]);
+}
+```
+
+### 2.4. Confirmation Sécurisée Finale (`flexpayConfirm`)
+Après le succès côté frontend, on confirme avec Firebase avant d'enregistrer l'achat définitif (Panier/Wallet/Cart). Vérification du montant, devise, et user_id pour éviter la fraude.
+
+```php
+public function flexpayConfirm(Request $request)
+{
+    $reference = trim((string) $request->input('reference', ''));
+    $payment = $this->fs->getDoc('mobile_money_payments/' . $reference);
+
+    if (($payment['status'] ?? '') !== 'completed') {
+        return response()->json(['status' => false, 'message' => 'Paiement non complété.'], 422);
+    }
+
+    // Vérification Montant
+    $expectedAmount = $this->payAmount($request); // Votre fonction pour obtenir le montant panier
+    $paidAmount = (float) ($payment['amount'] ?? 0);
+    if (abs($paidAmount - $expectedAmount) > 0.01) {
+        return response()->json(['status' => false, 'message' => 'Montant incorrect.'], 422);
+    }
+
+    // Vérification User
+    $expectedUid = Auth::user()->uuid ?? '';
+    $paidUid = (string) ($payment['userId'] ?? '');
+    if ($paidUid !== $expectedUid) {
+        return response()->json(['status' => false, 'message' => 'Mismatch User.'], 403);
+    }
+
+    // Marquer l'ordre final comme payé
+    return response()->json([
+        'status' => true,
+        'redirect' => route('order.success.route')
+    ]);
+}
+```
+
+## Routes Web.php
+
+N'oubliez pas d'exclure `payments/flexpay/callback` dans `VerifyCsrfToken.php`.
+
+```php
+Route::post('payments/flexpay/init', [SecurePaymentController::class, 'flexpayInit'])->name('payments.flexpay.init');
+Route::post('payments/flexpay/status', [SecurePaymentController::class, 'flexpayStatus'])->name('payments.flexpay.status');
+Route::post('payments/flexpay/callback', [SecurePaymentController::class, 'flexpayCallback'])->name('payments.flexpay.callback');
+Route::post('payments/flexpay/confirm', [SecurePaymentController::class, 'flexpayConfirm'])->name('payments.flexpay.confirm');
+```
+

@@ -1,4 +1,8 @@
 # FlexPay Mobile Money — Integration Skill 🚀
+> **Con�u et partag� par : Michel Bengana**
+> 
+> *Ce guide est une architecture universelle. Bien que les exemples incluent PHP, Next.js et **Laravel avec Firestore (comme impl�ment� dans Viteat)**, les concepts architecturaux (Initiation, Polling, Callback, S�curit�) sont valables pour TOUS les langages (Node.js, Python, Java, etc.).*
+
 
 **Un guide complet pour intégrer les paiements Mobile Money en RDC dans vos applications PHP et Next.js.**
 
@@ -117,3 +121,4 @@ MIT — utilisez ce code librement dans vos projets commerciaux ou open-source.
 ---
 
 **Développé à partir de l'expérience production de [TIXYA](https://tixya.online) — Première plateforme de billetterie et de gestion événementielle en ligne en RDC.**
+

@@ -1,0 +1,46 @@
+﻿{
+    "name": "flexpay/flexpay-laravel",
+    "description": "Package officiel et Skill d'intégration FlexPay (Mobile Money RDC & Carte) pour Laravel",
+    "keywords": ["laravel", "flexpay", "mobile-money", "rdc", "congo", "airtel-money", "mpesa", "orange-money", "afrimoney", "payments"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Viteat Engineering Team",
+            "email": "dev@viteat.cd"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "illuminate/http": "^10.0|^11.0|^12.0",
+        "illuminate/database": "^10.0|^11.0|^12.0",
+        "illuminate/events": "^10.0|^11.0|^12.0",
+        "illuminate/view": "^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0|^11.0",
+        "orchestra/testbench": "^8.0|^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "FlexPay\\Laravel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "FlexPay\\Laravel\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "FlexPay\\Laravel\\FlexPayServiceProvider"
+            ],
+            "aliases": {
+                "FlexPay": "FlexPay\\Laravel\\Facades\\FlexPay"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
